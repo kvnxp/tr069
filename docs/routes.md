@@ -240,18 +240,28 @@ curl -b cookies.txt -X POST \
   http://localhost:7547/cms/api/device/4857544387806FB0/action
 ```
 
-### Connection Request
+### Connection Request (Corrected - Query Parameter)
 ```bash
 curl -X POST \
   "http://localhost:7547/connection-request?serial=4857544387806FB0"
 ```
 
-### Full Discovery
+### Full Discovery (Corrected - Query Parameter)
 ```bash
 curl -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"serial":"4857544387806FB0"}' \
-  http://localhost:7547/full-discovery
+  "http://localhost:7547/full-discovery?serial=4857544387806FB0"
+```
+
+### Pull Parameters (Corrected - Query Parameter)
+```bash
+curl -X POST \
+  "http://localhost:7547/pull-params?serial=4857544387806FB0"
+```
+
+### Get Device Parameters (Structured Response)
+```bash
+curl "http://localhost:7547/device/4857544387806FB0/params"
+# Returns: {"total": 8, "offset": 0, "limit": 8, "params": [...]}
 ```
 
 ---
@@ -296,3 +306,59 @@ Server → Response (Empty) → Device
 ```
 
 Cada intercambio puede contener múltiples métodos RPC dependiendo de la cola de operaciones pendientes para el dispositivo.
+
+---
+
+## 🔧 Recent Fixes & Corrections (September 2025)
+
+### Parameter Display Issues (RESOLVED ✅)
+- **Problem**: Parameters showing as `[object Object]` in CMS interface
+- **Cause**: Frontend expecting simple objects, backend returning nested `{value: {value: "actual"}}` structure  
+- **Solution**: Updated `viewDevice()` and `viewParams()` functions to extract `param.value.value`
+- **Files Modified**: `src/cms/scripts/device-management.js`
+- **Impact**: All parameter values now display correctly in both device details and parameter list views
+
+### Discovery Serial Number Errors (RESOLVED ✅)  
+- **Problem**: "Serial number required" errors on all discovery functions
+- **Cause**: Frontend sending serial in POST body, backend expecting query parameter
+- **Solution**: Updated all discovery functions to use query parameters with `encodeURIComponent()`
+- **Functions Fixed**: `runDiscovery()`, `connectionRequest()`, `pullParams()`, `discoverAllDevices()`
+- **Impact**: All discovery and connection operations now work correctly
+
+### API Response Structure Handling (UPDATED ✅)
+The `/device/:serial/params` endpoint returns structured response with metadata:
+```json
+{
+  "total": 8,
+  "offset": 0, 
+  "limit": 8,
+  "params": [
+    {"name": "InternetGatewayDevice.DeviceInfo.HardwareVersion", "value": {"value": "31FD.A"}},
+    {"name": "InternetGatewayDevice.DeviceInfo.SoftwareVersion", "value": {"value": "V5R021C00S230"}}
+  ]
+}
+```
+
+### Device Status Detection Improved (ENHANCED ✅)
+- **Online Threshold**: Extended from 30 minutes to 120 minutes  
+- **Better Detection**: Devices now show "online" for 2 hours after last inform
+- **File Modified**: `src/cms/scripts/dashboard-core.js`
+- **Impact**: More accurate device status representation in dashboard
+
+### UI/UX Enhancements (IMPLEMENTED ✅)
+- **Sidebar Navigation**: Modern left sidebar replacing horizontal navigation
+- **Professional Design**: Improved color scheme and hover effects
+- **Fixed Layout**: Header and sidebar with proper positioning
+- **Files Modified**: `src/cms/components/layout.ts`, `src/cms/components/styles.ts`, `src/cms/html/dashboard.ts`
+
+### Corrected API Examples
+All examples now use proper query parameters instead of POST body for discovery operations:
+```bash
+# CORRECT (Fixed):
+curl -X POST "http://localhost:7547/full-discovery?serial=DEVICE_SERIAL"
+curl -X POST "http://localhost:7547/connection-request?serial=DEVICE_SERIAL"  
+curl -X POST "http://localhost:7547/pull-params?serial=DEVICE_SERIAL"
+
+# INCORRECT (Previous):
+curl -X POST -d '{"serial":"DEVICE_SERIAL"}' http://localhost:7547/full-discovery
+```

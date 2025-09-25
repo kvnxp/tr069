@@ -4,10 +4,9 @@ async function runDiscovery(serial) {
     if (!confirm(`¿Ejecutar discovery completo para el dispositivo ${serial}?\n\nEsto puede tomar varios minutos.`)) return;
     
     try {
-        const response = await fetch('/full-discovery', {
+        const response = await fetch(`/full-discovery?serial=${encodeURIComponent(serial)}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ serial })
+            headers: { 'Content-Type': 'application/json' }
         });
         
         const result = await response.json();
@@ -27,10 +26,9 @@ async function connectionRequest(serial) {
     if (!confirm(`¿Enviar connection request al dispositivo ${serial}?`)) return;
     
     try {
-        const response = await fetch('/connection-request', {
+        const response = await fetch(`/connection-request?serial=${encodeURIComponent(serial)}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ serial })
+            headers: { 'Content-Type': 'application/json' }
         });
         
         const result = await response.json();
@@ -49,10 +47,9 @@ async function pullParams(serial) {
     if (!confirm(`¿Obtener parámetros del dispositivo ${serial}?`)) return;
     
     try {
-        const response = await fetch('/pull-params', {
+        const response = await fetch(`/pull-params?serial=${encodeURIComponent(serial)}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ serial })
+            headers: { 'Content-Type': 'application/json' }
         });
         
         const result = await response.json();
@@ -103,14 +100,19 @@ async function discoverAllDevices() {
         let successCount = 0;
         let errorCount = 0;
         
-        for (const [serial, device] of Object.entries(devices)) {
+        // devices is an array, not an object
+        for (const device of devices) {
             try {
-                await fetch('/full-discovery', {
+                const response = await fetch(`/full-discovery?serial=${encodeURIComponent(device.serialNumber)}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ serial })
+                    headers: { 'Content-Type': 'application/json' }
                 });
-                successCount++;
+                
+                if (response.ok) {
+                    successCount++;
+                } else {
+                    errorCount++;
+                }
             } catch (error) {
                 errorCount++;
             }

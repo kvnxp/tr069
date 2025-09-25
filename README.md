@@ -1,6 +1,16 @@
-# TR-069 CWMP Management System with Integrated CMS
-
-A complete TR-069 (CWMP) Auto Configuration Server with **integrated web-based CMS**, **recursive parameter discovery** and **production authentication**. **Successfully discovered 1,196+ parameters** from real Huawei EG8041V5 device including complete network, WiFi, and port configurations.
+# TR-069 CWMP Management System with Integr### ✨ New Modular Features:
+- 🏗️ **Modular Architecture** - Clean separation of components, templates, and logic
+- 📋 **Sidebar Navigation** - Professional left sidebar with fixed positioning
+- 🔐 **Secure Login** - Session-based authentication
+- 📊 **Real-time Dashboard** - Live device monitoring with modern UI
+- 📱 **Responsive Design** - Works on all devices with adaptive layout
+- 🔄 **Auto-refresh** - Updates every 30 seconds
+- 📈 **Device Statistics** - Total, connected, last activity (120min online threshold)
+- 📶 **WiFi Management** - Complete WiFi configuration interface
+- 🎨 **Modern Design** - Professional color scheme with hover effects
+- 🔧 **Component Reusability** - Shared UI components across all pages
+- ✅ **Fixed Parameter Display** - Corrected [object Object] issues in parameter views
+- ✅ **Improved Discovery** - Fixed serial parameter handling in all discovery functions complete TR-069 (CWMP) Auto Configuration Server with **integrated web-based CMS**, **recursive parameter discovery** and **production authentication**. **Successfully discovered 1,196+ parameters** from real Huawei EG8041V5 device including complete network, WiFi, and port configurations.
 
 ## 🚀 Key Features - PRODUCTION PROVEN
 
@@ -58,6 +68,14 @@ curl -s "http://localhost:7547/devices" | jq
 - **TR-069**: `tr069` / `cwmp2024`
 
 ⚠️ **Change these credentials in production!**
+
+### 🔧 Recent Fixes & Improvements:
+- ✅ **Parameter Display Fixed** - Resolved `[object Object]` showing instead of actual values
+- ✅ **Discovery Functions Fixed** - Corrected "Serial number required" errors in all discovery operations  
+- ✅ **API Consistency** - Unified parameter handling between frontend JavaScript and backend APIs
+- ✅ **Enhanced Device Status** - Extended online threshold to 120 minutes for better device state detection
+- ✅ **Sidebar Navigation** - Modern left sidebar interface replacing horizontal navigation
+- ✅ **Value Extraction** - Smart parameter value extraction handling nested object structures
 
 ## 📡 Production Device Results
 
@@ -208,7 +226,7 @@ tr069Management/
 
 ## 📈 Production Status
 
-🎉 **PRODUCTION SUCCESS: TR-069 ACS with modular CMS successfully deployed! Complete web management interface with clean modular architecture provides real-time device monitoring and control. Successfully discovered 1,196+ parameters from real Huawei EG8041V5 device. Complete network, WiFi, and port configurations accessible via both API and web interface. Authentication working perfectly for both TR-069 protocol and web CMS. Modular architecture ensures maintainability and scalability. System ready for production deployment with comprehensive management capabilities.**
+🎉 **PRODUCTION SUCCESS: TR-069 ACS with modular CMS successfully deployed and fully functional! Complete web management interface with professional sidebar navigation provides real-time device monitoring and control. Successfully discovered 1,196+ parameters from real Huawei EG8041V5 device. All parameter display issues resolved - no more [object Object] errors. Discovery functions working perfectly with corrected serial number handling. Complete network, WiFi, and port configurations accessible via both API and web interface with proper value extraction. Authentication working perfectly for both TR-069 protocol and web CMS. Modern UI with 120-minute online detection threshold provides accurate device status. System fully production-ready with comprehensive management capabilities and robust error handling.**
 
 ## 🎯 Management Capabilities
 
