@@ -1,9 +1,21 @@
 import express, { Request, Response } from 'express';
 import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
 import { debug } from './auth';
+import { sessionConfig } from './auth/session';
 
 // Replaced corrupted file with a clean implementation.
 export const app = express();
+
+// Middleware setup
+app.use(cookieParser());
+app.use(sessionConfig);
+
+// Parse form data for CMS login
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// Parse SOAP/XML for TR-069 protocol
 app.use(bodyParser.text({ type: ['text/*', 'application/soap+xml', 'application/xml'] }));
 
 // Basic request logger for debugging incoming Inform/soap requests
