@@ -16,22 +16,24 @@ export function createDashboardPage(username: string): string {
 <body>
     ${createHeader(username)}
     
-    <div class="main-content">
+    <div class="app-container">
         ${createNavigation('dashboard')}
         
-        ${createStatsGrid()}
-        
-        <div class="devices-section">
-            <div class="section-header">
-                <h2>Gestión de Dispositivos</h2>
-                <div>
-                    <button class="refresh-btn" onclick="loadDevices()">Actualizar</button>
-                    <button class="refresh-btn" onclick="discoverAllDevices()" style="margin-left: 0.5rem; background: #28a745;">Discovery Global</button>
-                </div>
-            </div>
+        <div class="main-content">
+            ${createStatsGrid()}
             
-            <div id="devices-content">
-                <div class="loading">Cargando dispositivos...</div>
+            <div class="devices-section">
+                <div class="section-header">
+                    <h2>Gestión de Dispositivos</h2>
+                    <div>
+                        <button class="refresh-btn" onclick="loadDevices()">Actualizar</button>
+                        <button class="refresh-btn" onclick="discoverAllDevices()" style="margin-left: 0.5rem; background: #28a745;">Discovery Global</button>
+                    </div>
+                </div>
+                
+                <div id="devices-content">
+                    <div class="loading">Cargando dispositivos...</div>
+                </div>
             </div>
         </div>
     </div>

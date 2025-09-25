@@ -9,6 +9,7 @@ export const cmsStyles = `
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: #f5f7fa;
+    margin-top: 70px;
 }
 
 .header {
@@ -19,6 +20,12 @@ body {
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    height: 70px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
 }
 
 .header h1 {
@@ -46,47 +53,86 @@ body {
     background: rgba(255,255,255,0.3);
 }
 
-.main-content {
-    padding: 2rem;
-}
-
-.nav-menu {
-    background: white;
-    padding: 0;
-    margin-bottom: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    overflow: hidden;
-}
-
-.nav-menu ul {
+.app-container {
     display: flex;
+    min-height: calc(100vh - 70px);
+}
+
+.sidebar {
+    width: 260px;
+    background: #2c3e50;
+    color: white;
+    position: fixed;
+    left: 0;
+    top: 70px;
+    height: calc(100vh - 70px);
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+}
+
+.sidebar-header {
+    padding: 1.5rem;
+    background: #34495e;
+    border-bottom: 1px solid #3d566e;
+}
+
+.sidebar-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    color: white;
+}
+
+.sidebar-menu {
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 1rem 0;
 }
 
-.nav-menu li {
-    flex: 1;
+.sidebar-menu li {
+    margin: 0;
 }
 
-.nav-menu a {
-    display: block;
-    padding: 1rem 1.5rem;
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
     text-decoration: none;
-    color: #666;
-    border-right: 1px solid #e9ecef;
-    text-align: center;
-    transition: all 0.3s;
+    color: #bdc3c7;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
 }
 
-.nav-menu li:last-child a {
-    border-right: none;
+.sidebar-link:hover {
+    background: #34495e;
+    color: white;
+    border-left-color: #667eea;
 }
 
-.nav-menu a:hover, .nav-menu a.active {
+.sidebar-link.active {
     background: #667eea;
     color: white;
+    border-left-color: #5a67d8;
+}
+
+.sidebar-icon {
+    font-size: 1.1rem;
+    margin-right: 0.75rem;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar-text {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.main-content {
+    margin-left: 260px;
+    padding: 2rem;
+    width: calc(100% - 260px);
+    min-height: calc(100vh - 70px);
 }
 
 .stats-grid {

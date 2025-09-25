@@ -6,8 +6,23 @@ const router = Router();
 // API endpoint for devices
 router.get('/devices', requireAuth, async (req: Request, res: Response) => {
   try {
+    // Get the list of device serial numbers
     const response = await fetch(`http://localhost:${process.env.PORT || 7547}/devices`);
-    const devices = await response.json();
+    const deviceList = await response.json();
+    
+    // Fetch full device data for each device
+    const devicePromises = deviceList.map(async (device: any) => {
+      try {
+        const deviceResponse = await fetch(`http://localhost:${process.env.PORT || 7547}/device/${device.serial}`);
+        return await deviceResponse.json();
+      } catch (error) {
+        console.error(`Error fetching device ${device.serial}:`, error);
+        // Return minimal device info if individual device fetch fails
+        return { serialNumber: device.serial };
+      }
+    });
+    
+    const devices = await Promise.all(devicePromises);
     res.json(devices);
   } catch (error) {
     console.error('Error fetching devices:', error);

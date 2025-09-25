@@ -26,14 +26,18 @@ export function createNavigation(currentPage = 'dashboard'): string {
   ];
 
   return `
-    <nav class="nav-menu">
-        <ul>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h3>💻 TR-069 CMS</h3>
+        </div>
+        <ul class="sidebar-menu">
             ${pages.map(page => `
                 <li>
                     <a href="${page.url}" 
-                       class="${page.id === currentPage ? 'active' : ''}"
+                       class="sidebar-link ${page.id === currentPage ? 'active' : ''}"
                        ${page.onclick ? `onclick="${page.onclick}"` : ''}>
-                        ${page.icon} ${page.title}
+                        <span class="sidebar-icon">${page.icon}</span>
+                        <span class="sidebar-text">${page.title}</span>
                     </a>
                 </li>
             `).join('')}

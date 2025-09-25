@@ -10,7 +10,7 @@ function getDeviceStatus(lastInform) {
     const last = new Date(lastInform);
     const now = new Date();
     const diffMinutes = (now.getTime() - last.getTime()) / (1000 * 60);
-    return diffMinutes < 30 ? 'online' : 'offline';
+    return diffMinutes < 120 ? 'online' : 'offline'; // 2 hours instead of 30 minutes
 }
 
 async function loadDevices() {

@@ -43,12 +43,14 @@ curl -s "http://localhost:7547/devices" | jq
 
 ### ✨ New Modular Features:
 - 🏗️ **Modular Architecture** - Clean separation of components, templates, and logic
-- 🔐 **Secure Login** - Session-based authentication
-- 📊 **Real-time Dashboard** - Live device monitoring
-- 📱 **Responsive Design** - Works on all devices  
+- � **Sidebar Navigation** - Professional left sidebar with fixed positioning
+- �🔐 **Secure Login** - Session-based authentication
+- 📊 **Real-time Dashboard** - Live device monitoring with modern UI
+- 📱 **Responsive Design** - Works on all devices with adaptive layout
 - 🔄 **Auto-refresh** - Updates every 30 seconds
 - 📈 **Device Statistics** - Total, connected, last activity
 - 📶 **WiFi Management** - Complete WiFi configuration interface
+- 🎨 **Modern Design** - Professional color scheme with hover effects
 - 🔧 **Component Reusability** - Shared UI components across all pages
 
 ### Default Credentials:
@@ -166,7 +168,9 @@ tr069Management/
 │   └── devices.json             # Complete device database
 ├── docs/
 │   ├── PROGRESS.md              # Detailed development progress
-│   └── Summary.md               # Comprehensive project summary (consolidated)
+│   ├── Summary.md               # Comprehensive project summary (consolidated)
+│   ├── cms_styles.md            # Complete CMS styles reference and documentation
+│   └── routes.md                # Complete API routes reference for CWMP and CMS
 ├── .env                         # Environment configuration
 └── server.log                   # Runtime logs (when running in background)
 ```
@@ -222,6 +226,19 @@ tr069Management/
 - 📋 **Method Queuing** - Schedule TR-069 operations
 - 📊 **Status Monitoring** - Real-time device state tracking
 
+## 📚 Technical Documentation
+
+### Reference Guides
+- **[API Routes Reference](docs/routes.md)** - Complete documentation of all CWMP and CMS API endpoints
+- **[CMS Styles Guide](docs/cms_styles.md)** - Comprehensive CSS styles reference for the CMS interface
+- **[Development Progress](docs/PROGRESS.md)** - Detailed development progress and milestones
+- **[Project Summary](docs/Summary.md)** - Comprehensive project overview and technical details
+
+### Quick References
+- **CMS Styling**: See `docs/cms_styles.md` for all CSS classes, components, and design patterns
+- **API Integration**: See `docs/routes.md` for complete endpoint documentation with examples
+- **Component Architecture**: All CMS components documented with usage examples and styling guides
+
 ---
 
-*For detailed technical information, see `docs/Summary.md` and `docs/PROGRESS.md`*
+*For detailed technical information, see the documentation files in the `docs/` directory*

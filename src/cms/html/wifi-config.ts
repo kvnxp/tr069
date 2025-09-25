@@ -105,13 +105,15 @@ export function createWiFiConfigPage(serial: string): string {
 <body>
     ${createHeader('Admin').replace('TR-069 CMS', `Configuración WiFi - ${serial}`).replace('/cms/logout', '/cms/dashboard')}
     
-    <div class="main-content">
-        <div id="loading" class="loading">
-            <div>Cargando configuración WiFi...</div>
-        </div>
-        
-        <div id="wifi-config" style="display: none;">
-            <!-- WiFi networks will be loaded here -->
+    <div class="app-container">
+        <div class="main-content" style="margin-left: 0; width: 100%;">
+            <div id="loading" class="loading">
+                <div>Cargando configuración WiFi...</div>
+            </div>
+            
+            <div id="wifi-config" style="display: none;">
+                <!-- WiFi networks will be loaded here -->
+            </div>
         </div>
     </div>
     
