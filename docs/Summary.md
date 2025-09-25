@@ -13,6 +13,7 @@ A complete TR-069 (CWMP - CPE WAN Management Protocol) server implementation in 
    - Inform message handling and device registration
    - Session-based parameter discovery system
    - Automatic discovery triggering based on device state
+   - **Conditional Debug Logging**: Environment-controlled debug output (`DEBUG_MODE=true` in .env file)
 
 2. **Authentication System**
    - **HTTP Digest Authentication** with device-specific credentials
@@ -78,6 +79,15 @@ A complete TR-069 (CWMP - CPE WAN Management Protocol) server implementation in 
 # Start server in persistent background mode
 cd /home/kvnxp/aditum/tr069
 nohup bun src/index.ts > server.log 2>&1 &
+
+# Start server with debug logging enabled
+cd /home/kvnxp/aditum/tr069
+DEBUG_MODE=true nohup bun src/index.ts > server.log 2>&1 &
+
+# Or configure in .env file:
+# DEBUG_MODE=true
+# Then start normally:
+# nohup bun src/index.ts > server.log 2>&1 &
 
 # Monitor real-time logs
 tail -f server.log

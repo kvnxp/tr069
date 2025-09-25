@@ -5,6 +5,13 @@ import { upsertDevice, listDeviceParams, getDevice, setDeviceParams, loadDevices
 import http from 'http';
 import https from 'https';
 import crypto from 'crypto';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
+
+// Debug logging function
+export const debug = process.env.DEBUG_MODE === 'true' ? console.log : () => {};
 
 // Replaced corrupted file with a clean implementation.
 const app = express();
@@ -31,11 +38,11 @@ function createDigestAuth(username: string, password: string, method: string, ur
 app.use((req: Request, res: Response, next) => {
   if (req.method === 'POST') {
     try {
-      console.log('Incoming HTTP', req.method, req.path, 'from', req.ip || req.connection.remoteAddress);
-      console.log('Headers:', JSON.stringify(req.headers));
+      debug('Incoming HTTP', req.method, req.path, 'from', req.ip || req.connection.remoteAddress);
+      debug('Headers:', JSON.stringify(req.headers));
       if (req.body) {
         const snippet = (typeof req.body === 'string') ? req.body.substring(0, 2000) : JSON.stringify(req.body).substring(0, 2000);
-        console.log('Body (truncated 2000):', snippet);
+        debug('Body (truncated 2000):', snippet);
       }
     } catch (e) {
       console.warn('Failed to log request', e);
@@ -80,11 +87,11 @@ app.post('/queue-method', (req: Request, res: Response) => {
 app.post('/', async (req: Request, res: Response) => {
   const rawBody = req.body;
   const xmlRaw = typeof rawBody === 'string' ? rawBody : '';
-  console.log('Incoming HTTP POST / from', req.ip);
+  debug('Incoming HTTP POST / from', req.ip);
 
   // Guard: empty or non-string bodies
   if (!xmlRaw || xmlRaw.trim().length === 0) {
-    console.log('Empty body received on / — responding 204 No Content');
+    debug('Empty body received on / — responding 204 No Content');
     res.status(204).send();
     return;
   }
@@ -150,6 +157,7 @@ app.post('/', async (req: Request, res: Response) => {
     if (serialNumber) {
       const serial = String(serialNumber);
       const existing = getDevice(serial);
+      debug(`🔗 Device ${serial} connected (Inform received)`);
       upsertDevice({ serialNumber: serial, params: paramsMap, lastInform: new Date().toISOString() });
       
       // Check if we should do a full parameter discovery
@@ -160,6 +168,8 @@ app.post('/', async (req: Request, res: Response) => {
       if (!existing) {
         const connUrl = (paramsMap['Device.ManagementServer.ConnectionRequestURL'] && paramsMap['Device.ManagementServer.ConnectionRequestURL'].value) || (paramsMap['InternetGatewayDevice.ManagementServer.ConnectionRequestURL'] && paramsMap['InternetGatewayDevice.ManagementServer.ConnectionRequestURL'].value) || undefined;
         if (connUrl) {
+          debug(`🔍 Starting automatic discovery for new device ${serial}`);
+          
           const postSoap = (urlStr: string, envelope: string): Promise<any> => new Promise((resolve, reject) => {
             try {
               const url = new URL(urlStr);
@@ -214,7 +224,7 @@ app.post('/', async (req: Request, res: Response) => {
             try {
               // Start from root
               const allParams = await discoverParams('');
-              console.log(`Discovered ${allParams.length} leaf parameters for device ${serial}`);
+              debug(`Discovered ${allParams.length} leaf parameters for device ${serial}`);
               if (allParams.length) {
                 let namesXml = `<cwmp:GetParameterValues xmlns:cwmp=\"urn:dslforum-org:cwmp-1-0\">`;
                 namesXml += `<ParameterNames soap-enc:arrayType=\"xsd:string[${allParams.length}]\">`;
@@ -238,7 +248,7 @@ app.post('/', async (req: Request, res: Response) => {
                     if (nm) paramValues[nm] = { value: v };
                   }
                   setDeviceParams(serial, paramValues);
-                  console.log(`Persisted ${Object.keys(paramValues).length} parameter values for device ${serial}`);
+                  debug(`Persisted ${Object.keys(paramValues).length} parameter values for device ${serial}`);
                 }
               }
             } catch (e) {
@@ -251,7 +261,7 @@ app.post('/', async (req: Request, res: Response) => {
       // Check if we should do discovery - either pending request OR auto-discovery for incomplete devices
       const pendingDiscovery = (global as any).pendingDiscovery || {};
       if (pendingDiscovery[serial] || shouldDoFullDiscovery) {
-        console.log(`✨ Starting full parameter discovery for device ${serial} during Inform session`);
+        debug(`✨ Starting full parameter discovery for device ${serial} during Inform session`);
         
         // Initialize discovery queue for this session
         if (!(global as any).discoveryQueue) (global as any).discoveryQueue = {};
@@ -283,7 +293,7 @@ app.post('/', async (req: Request, res: Response) => {
   // Handle GetParameterNamesResponse (part of ongoing discovery)
   const getParamNamesResponse = body && (findKey(body, k => k.toLowerCase().includes('getparameternamesresponse')));
   if (getParamNamesResponse) {
-    console.log('📝 Processing GetParameterNamesResponse for ongoing discovery');
+    debug('📝 Processing GetParameterNamesResponse for ongoing discovery');
     
     const discoveryQueue = (global as any).discoveryQueue || {};
     let deviceSerial = null;
@@ -302,7 +312,7 @@ app.post('/', async (req: Request, res: Response) => {
       const items = parameterList.ParameterInfoStruct || parameterList.Parameter || [];
       const paramArray = Array.isArray(items) ? items : (items ? [items] : []);
       
-      console.log(`📋 Got ${paramArray.length} parameters in response for path: ${queue.paths[queue.currentPath] || 'root'}`);
+      debug(`📋 Got ${paramArray.length} parameters in response for path: ${queue.paths[queue.currentPath] || 'root'}`);
       
       const newPaths = [];
       const leafParams = [];
@@ -312,7 +322,7 @@ app.post('/', async (req: Request, res: Response) => {
         const writable = item.Writable || item.writable;
         
         if (name) {
-          console.log(`  📄 ${name} (writable: ${writable})`);
+          debug(`  📄 ${name} (writable: ${writable})`);
           
           // In TR-069: Objects end with '.' and should be explored further
           // Leaf parameters don't end with '.' regardless of Writable value
@@ -331,12 +341,12 @@ app.post('/', async (req: Request, res: Response) => {
       queue.paths.push(...newPaths);
       queue.currentPath++;
       
-      console.log(`📊 Discovery progress: ${queue.allParams.size} leaf parameters found, ${queue.paths.length - queue.currentPath} paths remaining`);
+      debug(`📊 Discovery progress: ${queue.allParams.size} leaf parameters found, ${queue.paths.length - queue.currentPath} paths remaining`);
       
       // Continue with next path or finish discovery
       if (queue.currentPath < queue.paths.length) {
         const nextPath = queue.paths[queue.currentPath];
-        console.log(`🔍 Discovering next path: ${nextPath}`);
+        debug(`🔍 Discovering next path: ${nextPath}`);
         
         const getParamNamesXml = `<cwmp:GetParameterNames xmlns:cwmp="urn:dslforum-org:cwmp-1-0">
           <ParameterPath>${nextPath}</ParameterPath>
@@ -347,7 +357,7 @@ app.post('/', async (req: Request, res: Response) => {
         return;
       } else {
         // Discovery complete! Get all parameter values
-        console.log(`🎉 Parameter discovery complete! Found ${queue.allParams.size} parameters. Getting values...`);
+        debug(`🎉 Parameter discovery complete! Found ${queue.allParams.size} parameters. Getting values...`);
         
         const allParamsList = Array.from(queue.allParams);
         const batchSize = 50; // Reasonable batch size
@@ -385,7 +395,7 @@ app.post('/', async (req: Request, res: Response) => {
   // Handle GetParameterValuesResponse (getting actual parameter values)
   const getParamValuesResponse = body && (findKey(body, k => k.toLowerCase().includes('getparametervaluesresponse')));
   if (getParamValuesResponse) {
-    console.log('📊 Processing GetParameterValuesResponse');
+    debug('📊 Processing GetParameterValuesResponse');
     
     const discoveryQueue = (global as any).discoveryQueue || {};
     let deviceSerial = null;
@@ -423,7 +433,7 @@ app.post('/', async (req: Request, res: Response) => {
       }
       
       queue.currentBatch++;
-      console.log(`📦 Processed batch ${queue.currentBatch}/${queue.valueBatches.length} (${paramArray.length} parameters)`);
+      debug(`📦 Processed batch ${queue.currentBatch}/${queue.valueBatches.length} (${paramArray.length} parameters)`);
       
       // Continue with next batch or finish
       if (queue.currentBatch < queue.valueBatches.length) {
@@ -441,7 +451,7 @@ app.post('/', async (req: Request, res: Response) => {
         return;
       } else {
         // All done! Save parameters to device
-        console.log(`✅ FULL DISCOVERY COMPLETE! Saving ${Object.keys(queue.allValues).length} parameters for device ${deviceSerial}`);
+        debug(`✅ FULL DISCOVERY COMPLETE! Saving ${Object.keys(queue.allValues).length} parameters for device ${deviceSerial}`);
         setDeviceParams(deviceSerial, queue.allValues);
         
         // Clean up discovery queue
@@ -473,42 +483,42 @@ app.post('/pull-params', async (req: Request, res: Response) => {
   const username = (device as any).username || (req.query.username as string) || 'admin';
   const password = (device as any).password || (req.query.password as string) || 'admin';
   
-  console.log(`Attempting parameter pull for device ${serial}`);
-  console.log(`Using ConnectionRequestURL: ${connUrl}`);
-  console.log(`Using credentials: ${username}:${'*'.repeat(password.length)}`);
+  debug(`Attempting parameter pull for device ${serial}`);
+  debug(`Using ConnectionRequestURL: ${connUrl}`);
+  debug(`Using credentials: ${username}:${'*'.repeat(password.length)}`);
 
   try {
-    console.log(`Attempting to pull parameters from device ${serial} using URL: ${connUrl}`);
-    console.log(`Using credentials: ${username}:${password}`);
+    debug(`Attempting to pull parameters from device ${serial} using URL: ${connUrl}`);
+    debug(`Using credentials: ${username}:${password}`);
     
     const postSoap = (urlStr: string, envelope: string, username: string = 'admin', password: string = 'admin'): Promise<any> => {
       return new Promise((resolve, reject) => {
         try {
-          console.log(`Making SOAP request to: ${urlStr}`);
+          debug(`Making SOAP request to: ${urlStr}`);
           const url = new URL(urlStr);
           const lib = url.protocol === 'https:' ? https : http;
           
           // First attempt without auth to get the challenge
           const opts: any = { method: 'POST', headers: { 'Content-Type': 'text/xml', 'Content-Length': Buffer.byteLength(envelope, 'utf8') } };
           const r = lib.request(url, opts, (resp) => {
-            console.log(`Response received with status: ${resp.statusCode}`);
+            debug(`Response received with status: ${resp.statusCode}`);
             
             if (resp.statusCode === 401) {
               // Handle Digest Authentication
               const wwwAuth = resp.headers['www-authenticate'];
               if (wwwAuth && wwwAuth.includes('Digest')) {
-                console.log(`Device requires authentication: ${wwwAuth}`);
+                debug(`Device requires authentication: ${wwwAuth}`);
                 
                 // Parse the WWW-Authenticate header
                 const realm = wwwAuth.match(/realm="([^"]+)"/)?.[1] || '';
                 const nonce = wwwAuth.match(/nonce="([^"]+)"/)?.[1] || '';
                 const qop = wwwAuth.match(/qop="?([^",\s]+)"?/)?.[1];
                 
-                console.log(`Parsed auth: realm="${realm}", nonce="${nonce}", qop="${qop}"`);
+                debug(`Parsed auth: realm="${realm}", nonce="${nonce}", qop="${qop}"`);
                 
                 // Create digest auth header
                 const authHeader = createDigestAuth(username, password, 'POST', url.pathname, realm, nonce, qop);
-                console.log(`Using auth header: ${authHeader}`);
+                debug(`Using auth header: ${authHeader}`);
                 
                 // Retry with authentication
                 const authOpts = { 
@@ -521,12 +531,12 @@ app.post('/pull-params', async (req: Request, res: Response) => {
                 };
                 
                 const r2 = lib.request(url, authOpts, (resp2) => {
-                  console.log(`Authenticated response status: ${resp2.statusCode}`);
+                  debug(`Authenticated response status: ${resp2.statusCode}`);
                   let chunks: Buffer[] = [];
                   resp2.on('data', c => chunks.push(Buffer.from(c)));
                   resp2.on('end', async () => {
                     const body = Buffer.concat(chunks).toString();
-                    console.log(`Response body length: ${body.length} chars`);
+                    debug(`Response body length: ${body.length} chars`);
                     if (resp2.statusCode === 200) {
                       try { 
                         const parsedResp = await parseSoap(body); 
@@ -561,7 +571,7 @@ app.post('/pull-params', async (req: Request, res: Response) => {
               resp.on('data', c => chunks.push(Buffer.from(c)));
               resp.on('end', async () => {
                 const body = Buffer.concat(chunks).toString();
-                console.log(`Response body length: ${body.length} chars`);
+                debug(`Response body length: ${body.length} chars`);
                 
                 if (resp.statusCode === 503) {
                   console.error(`Device unavailable (503 Service Unavailable). Device may be busy or not ready.`);
@@ -629,7 +639,7 @@ app.post('/pull-params', async (req: Request, res: Response) => {
 
     // Start from root
     const allParams = await discoverParams('');
-    console.log(`Discovered ${allParams.length} leaf parameters for device ${serial}`);
+    debug(`Discovered ${allParams.length} leaf parameters for device ${serial}`);
     if (allParams.length) {
       let namesXml = `<cwmp:GetParameterValues xmlns:cwmp=\"urn:dslforum-org:cwmp-1-0\">`;
       namesXml += `<ParameterNames soap-enc:arrayType=\"xsd:string[${allParams.length}]\">`;
@@ -653,7 +663,7 @@ app.post('/pull-params', async (req: Request, res: Response) => {
           if (nm) paramValues[nm] = { value: v };
         }
         setDeviceParams(serial, paramValues);
-        console.log(`Persisted ${Object.keys(paramValues).length} parameter values for device ${serial}`);
+        debug(`Persisted ${Object.keys(paramValues).length} parameter values for device ${serial}`);
       }
       return res.json({ ok: true, pulled: true });
     }
@@ -745,14 +755,14 @@ app.post('/full-discovery', async (req: Request, res: Response) => {
   const username = (device as any).username || 'admin';
   const password = (device as any).password || 'admin';
   
-  console.log(`Starting FULL parameter discovery for device ${serial}`);
-  console.log(`This will recursively discover ALL available parameters...`);
+  debug(`Starting FULL parameter discovery for device ${serial}`);
+  debug(`This will recursively discover ALL available parameters...`);
   
   try {
     const postSoap = (urlStr: string, envelope: string, user: string = username, pass: string = password): Promise<any> => {
       return new Promise((resolve, reject) => {
         try {
-          console.log(`Making SOAP request to: ${urlStr}`);
+          debug(`Making SOAP request to: ${urlStr}`);
           const url = new URL(urlStr);
           const lib = url.protocol === 'https:' ? https : http;
           
@@ -764,7 +774,7 @@ app.post('/full-discovery', async (req: Request, res: Response) => {
               // Handle Digest Authentication
               const wwwAuth = resp.headers['www-authenticate'];
               if (wwwAuth && wwwAuth.includes('Digest')) {
-                console.log(`Device requires authentication, using credentials...`);
+                debug(`Device requires authentication, using credentials...`);
                 
                 // Parse the WWW-Authenticate header
                 const realm = wwwAuth.match(/realm="([^"]+)"/)?.[1] || '';
@@ -846,7 +856,7 @@ app.post('/full-discovery', async (req: Request, res: Response) => {
         return [];
       }
       
-      console.log(`${'  '.repeat(depth)}Discovering: ${path || 'root'}`);
+      debug(`${'  '.repeat(depth)}Discovering: ${path || 'root'}`);
       
       const getNamesXml = `<cwmp:GetParameterNames xmlns:cwmp="urn:dslforum-org:cwmp-1-0">
         <ParameterPath>${path}</ParameterPath>
@@ -875,7 +885,7 @@ app.post('/full-discovery', async (req: Request, res: Response) => {
             if (writable === 'false' || writable === false) {
               // This is a leaf parameter (readable)
               leafParams.push(paramName);
-              console.log(`${'  '.repeat(depth + 1)}✓ ${paramName}`);
+              debug(`${'  '.repeat(depth + 1)}✓ ${paramName}`);
             } else {
               // This might be a branch, recurse into it
               try {
@@ -894,12 +904,12 @@ app.post('/full-discovery', async (req: Request, res: Response) => {
       return leafParams;
     }
 
-    console.log('=== Starting recursive parameter discovery ===');
+    debug('=== Starting recursive parameter discovery ===');
     const allParams = await discoverAllParams();
-    console.log(`=== Discovered ${allParams.length} total parameters ===`);
+    debug(`=== Discovered ${allParams.length} total parameters ===`);
     
     if (allParams.length > 0) {
-      console.log('Getting parameter values...');
+      debug('Getting parameter values...');
       
       // Get values in batches to avoid overwhelming the device
       const batchSize = 50; // Reasonable batch size for TR-069
@@ -907,7 +917,7 @@ app.post('/full-discovery', async (req: Request, res: Response) => {
       
       for (let i = 0; i < allParams.length; i += batchSize) {
         const batch = allParams.slice(i, i + batchSize);
-        console.log(`Getting values for batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(allParams.length/batchSize)} (${batch.length} params)`);
+        debug(`Getting values for batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(allParams.length/batchSize)} (${batch.length} params)`);
         
         try {
           let getValuesXml = `<cwmp:GetParameterValues xmlns:cwmp="urn:dslforum-org:cwmp-1-0">`;
@@ -948,7 +958,7 @@ app.post('/full-discovery', async (req: Request, res: Response) => {
       
       // Save all discovered parameters
       setDeviceParams(serial, allValues);
-      console.log(`✅ DISCOVERY COMPLETE! Saved ${Object.keys(allValues).length} parameters for device ${serial}`);
+      debug(`✅ DISCOVERY COMPLETE! Saved ${Object.keys(allValues).length} parameters for device ${serial}`);
       
       res.json({
         success: true,
@@ -998,7 +1008,7 @@ app.post('/schedule-discovery', async (req: Request, res: Response) => {
   if (!(global as any).pendingDiscovery) (global as any).pendingDiscovery = {};
   (global as any).pendingDiscovery[serial] = true;
   
-  console.log(`📋 Scheduled full parameter discovery for device ${serial} on next connection`);
+  debug(`📋 Scheduled full parameter discovery for device ${serial} on next connection`);
   
   res.json({
     success: true,
@@ -1040,7 +1050,7 @@ app.post('/connection-request', async (req: Request, res: Response) => {
   const password = (device as any).password || 'admin';
   
   try {
-    console.log(`Sending Connection Request to device ${serial} at ${connUrl}`);
+    debug(`Sending Connection Request to device ${serial} at ${connUrl}`);
     
     const url = new URL(connUrl);
     const lib = url.protocol === 'https:' ? https : http;
@@ -1063,7 +1073,7 @@ app.post('/connection-request', async (req: Request, res: Response) => {
           const nonce = wwwAuth.match(/nonce="([^"]+)"/)?.[1] || '';
           const qop = wwwAuth.match(/qop="?([^",\s]+)"?/)?.[1];
           
-          console.log(`Got auth challenge: realm="${realm}", nonce="${nonce}"`);
+          debug(`Got auth challenge: realm="${realm}", nonce="${nonce}"`);
           
           const authHeader = createDigestAuth(username, password, 'POST', url.pathname, realm, nonce, qop);
           const authOpts = {
@@ -1106,7 +1116,7 @@ app.post('/connection-request', async (req: Request, res: Response) => {
       req.end();
     });
     
-    console.log(`Connection Request response: ${result.status}`);
+    debug(`Connection Request response: ${result.status}`);
     
     if (result.status === 200) {
       res.json({ 
