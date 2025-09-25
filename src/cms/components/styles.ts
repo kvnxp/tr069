@@ -214,22 +214,50 @@ body {
     color: #333;
 }
 
-.status-badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-.status-online {
-    background: #d4edda;
-    color: #155724;
-}
-
-.status-offline {
-    background: #f8d7da;
-    color: #721c24;
-}
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .status-online { 
+            background: #d4edda; 
+            color: #155724; 
+        }
+        
+        .status-offline { 
+            background: #f8d7da; 
+            color: #721c24; 
+        }
+        
+        /* Discovery Status Badges */
+        .discovery-status {
+            margin-top: 4px;
+            font-size: 0.75rem;
+        }
+        
+        .discovery-badge {
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        
+        .discovery-complete {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .discovery-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .discovery-incomplete {
+            background: #f8d7da;
+            color: #721c24;
+        }
 
 .device-actions {
     display: flex;

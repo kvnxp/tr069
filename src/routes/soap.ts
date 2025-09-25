@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { upsertDevice, listDeviceParams, getDevice, setDeviceParams } from '../store';
+import { upsertDevice, listDeviceParams, getDevice, setDeviceParams, isDeviceDiscovered } from '../store';
 import { parseSoap, buildInformResponse, buildMethodRequest } from '../soap';
 import { debug } from '../auth';
 
@@ -80,9 +80,15 @@ export const handleSoapRequest = async (req: Request, res: Response) => {
       upsertDevice({ serialNumber: serial, params: paramsMap, lastInform: new Date().toISOString() });
 
       // Check if we should do a full parameter discovery
-      // Auto-discover if device is new OR has very few parameters (< 20 means incomplete discovery)
-      const paramCount = existing ? Object.keys(existing.params || {}).length : 0;
-      const shouldDoFullDiscovery = !existing || (req.query.discover === 'true') || paramCount < 20;
+      // Auto-discover only if:
+      // 1. Device is completely new (never seen before)
+      // 2. Explicit manual discovery requested (?discover=true)
+      // 3. Device is not marked as already discovered (using smart discovery status)
+      const isAlreadyDiscovered = isDeviceDiscovered(serial);
+      const isManualDiscovery = req.query.discover === 'true';
+      const isNewDevice = !existing;
+      
+      const shouldDoFullDiscovery = isNewDevice || isManualDiscovery || !isAlreadyDiscovered;
 
       if (!existing) {
         const connUrl = (paramsMap['Device.ManagementServer.ConnectionRequestURL'] && paramsMap['Device.ManagementServer.ConnectionRequestURL'].value) || (paramsMap['InternetGatewayDevice.ManagementServer.ConnectionRequestURL'] && paramsMap['InternetGatewayDevice.ManagementServer.ConnectionRequestURL'].value) || undefined;
@@ -94,10 +100,14 @@ export const handleSoapRequest = async (req: Request, res: Response) => {
         }
       }
 
-      // Check if we should do discovery - either pending request OR auto-discovery for incomplete devices
+      // Check if we should do discovery - either pending request OR auto-discovery for new/incomplete devices
       const pendingDiscovery = (global as any).pendingDiscovery || {};
       if (pendingDiscovery[serial] || shouldDoFullDiscovery) {
-        debug(`✨ Starting full parameter discovery for device ${serial} during Inform session`);
+        const discoveryReason = isManualDiscovery ? 'manual request' :
+                              isNewDevice ? 'new device' :
+                              !isAlreadyDiscovered ? 'incomplete discovery' :
+                              'pending discovery';
+        debug(`✨ Starting full parameter discovery for device ${serial} during Inform session (reason: ${discoveryReason})`);
 
         // Initialize discovery queue for this session
         if (!(global as any).discoveryQueue) (global as any).discoveryQueue = {};
@@ -288,7 +298,9 @@ export const handleSoapRequest = async (req: Request, res: Response) => {
       } else {
         // All done! Save parameters to device
         debug(`✅ FULL DISCOVERY COMPLETE! Saving ${Object.keys(queue.allValues).length} parameters for device ${deviceSerial}`);
-        setDeviceParams(deviceSerial, queue.allValues);
+        // Mark discovery as completed with the appropriate manual flag
+        const wasManualDiscovery = (req.query.discover === 'true');
+        setDeviceParams(deviceSerial, queue.allValues, wasManualDiscovery);
 
         // Clean up discovery queue
         delete discoveryQueue[deviceSerial];

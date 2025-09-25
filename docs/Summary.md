@@ -6,7 +6,7 @@
 ## Project Overview
 A complete TR-069 (CWMP - CPE WAN Management Protocol) server implementation in TypeScript using Express.js with **modular web-based CMS** and advanced automatic parameter discovery. This system acts as an Auto Configuration Server (ACS) that can manage TR-069 compatible devices like routers, modems, and other CPE (Customer Premise Equipment) with comprehensive web-based management capabilities.
 
-## Current Status: Production Success - CMS + 1,196+ Parameters Discovered
+## Current Status: Production Success - CMS + 2,396+ Parameters Discovered
 *Last Updated: 2025-09-25*
 
 ### Implemented Features ✅
@@ -70,6 +70,7 @@ A complete TR-069 (CWMP - CPE WAN Management Protocol) server implementation in 
    - **CMS Endpoints**: `GET /cms/dashboard`, `POST /cms/login`, `GET /cms/api/devices`
    - **Discovery**: `POST /full-discovery`, `POST /pull-params`
    - **Management**: `POST /connection-request`, `POST /queue-method`
+   - **Discovery Prevention**: Automatic prevention for devices with `discover="completed"`
 
 9. **Background Server Management**
    - Persistent server execution using bun runtime
@@ -90,17 +91,19 @@ A complete TR-069 (CWMP - CPE WAN Management Protocol) server implementation in 
 ### Real Device Production Results ✅ OUTSTANDING SUCCESS
 - **Successfully deployed with Huawei EG8041V5 ONT/Router** - PRODUCTION TESTED
 - **HTTP Digest Authentication**: Working perfectly with device credentials
-- **Full Parameter Discovery**: ✅ **1,196+ parameters successfully discovered**
+- **Full Parameter Discovery**: ✅ **2,396+ parameters successfully discovered** (latest session)
 - **Complete Configuration Access**: Network, WiFi, ports, management - ALL DISCOVERED  
 - **Device Connection**: Stable connection via device IP:7547 - PRODUCTION STABLE
 - **Firmware Compatibility**: V5R021C00S230 fully supported with complete parameter access
+- **Autodiscovery Prevention**: ✅ **Legacy devices with `discover="completed"` skip automatic rediscovery**
 
 ### Current Production Capabilities
-1. **Complete Network Discovery**: All WAN/LAN configuration parameters
-2. **WiFi Configuration**: SSIDs, passwords, security settings, access points
-3. **Port Management**: Port forwarding, firewall rules, NAT configuration
-4. **Device Status**: Hardware info, firmware, capabilities, statistics
-5. **Management Settings**: TR-069 configuration, URLs, authentication
+1. **Complete Network Discovery**: All WAN/LAN configuration parameters (2,396+ discovered)
+2. **WiFi Configuration**: SSIDs, passwords, security settings, access points, neighbor AP scanning
+3. **Port Management**: Port forwarding, firewall rules, NAT configuration, statistics
+4. **Device Status**: Hardware info, firmware, capabilities, real-time statistics
+5. **Management Settings**: TR-069 configuration, URLs, authentication, advanced options
+6. **Intelligent Discovery**: Prevents unnecessary rediscovery for completed devices
 
 ### Development Commands
 ```bash
@@ -227,15 +230,16 @@ tr069Management/
 ```
 
 ### Current Achievement Summary
-🚀 **PRODUCTION SUCCESS: Complete TR-069 ACS with modular web CMS and recursive parameter discovery successfully deployed and tested. System features a complete modular web-based management interface accessible at :7547/cms with optimized navigation, real-time device monitoring, secure authentication, and auto-refreshing dashboard. Successfully discovered 1,196+ parameters from real Huawei EG8041V5 device including complete network configuration, WiFi settings (SSIDs, passwords, security), port forwarding rules, and all device management parameters. Both TR-069 protocol and web CMS authentication working perfectly, comprehensive management capabilities with clean modular architecture delivered, production-ready deployment achieved.**
+🚀 **PRODUCTION SUCCESS: Complete TR-069 ACS with modular web CMS and recursive parameter discovery successfully deployed and tested. System features a complete modular web-based management interface accessible at :7547/cms with optimized navigation, real-time device monitoring, secure authentication, and auto-refreshing dashboard. Successfully discovered 2,396+ parameters from real Huawei EG8041V5 device including complete network configuration, WiFi settings (SSIDs, passwords, security), port forwarding rules, neighbor AP scanning, and all device management parameters. Intelligent autodiscovery prevention system ensures devices marked as completed don't trigger unnecessary rediscovery. Both TR-069 protocol and web CMS authentication working perfectly, comprehensive management capabilities with clean modular architecture and backward compatibility delivered, production-ready deployment achieved.**
 
 ## 📊 Discovery Results Breakdown
-- **Total Parameters Discovered**: 1,196+ (vs 8 basic without discovery)
-- **Network Configuration**: ✅ Complete WAN/LAN settings, IP configuration, routing
-- **WiFi Management**: ✅ Multiple SSIDs, passwords, security modes, channels  
-- **Port Configuration**: ✅ Port forwarding, firewall rules, NAT settings
-- **Device Information**: ✅ Hardware details, firmware, capabilities, diagnostics
-- **TR-069 Management**: ✅ Complete management server configuration and URLs
+- **Total Parameters Discovered**: 2,396+ (vs 8 basic without discovery) - **LATEST SESSION**
+- **Network Configuration**: ✅ Complete WAN/LAN settings, IP configuration, routing, statistics
+- **WiFi Management**: ✅ Multiple SSIDs, passwords, security modes, channels, neighbor AP scanning  
+- **Port Configuration**: ✅ Port forwarding, firewall rules, NAT settings, traffic statistics
+- **Device Information**: ✅ Hardware details, firmware, capabilities, process status, diagnostics
+- **TR-069 Management**: ✅ Complete management server configuration, URLs, advanced options
+- **Discovery Intelligence**: ✅ Automatic prevention for already-completed devices
 
 ### Modular Architecture Benefits ✅
 - **Maintainability**: Clean separation of components, templates, and logic

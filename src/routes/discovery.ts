@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import http from 'http';
 import https from 'https';
-import { getDevice, setDeviceParams } from '../store';
+import { getDevice, setDeviceParams, markDiscoveryAsManual } from '../store';
 import { buildMethodRequest, parseSoap } from '../soap';
 import { debug, createDigestAuth } from '../auth';
 
@@ -469,9 +469,9 @@ export const fullDiscovery = async (req: Request, res: Response) => {
         }
       }
 
-      // Save all discovered parameters
-      setDeviceParams(serial, allValues);
-      debug(`✅ DISCOVERY COMPLETE! Saved ${Object.keys(allValues).length} parameters for device ${serial}`);
+      // Save all discovered parameters and mark as manual discovery
+      setDeviceParams(serial, allValues, true); // true = manual discovery
+      debug(`✅ MANUAL DISCOVERY COMPLETE! Saved ${Object.keys(allValues).length} parameters for device ${serial}`);
 
       res.json({
         success: true,

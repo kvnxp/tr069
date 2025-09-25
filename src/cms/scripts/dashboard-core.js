@@ -1,8 +1,54 @@
 // Dashboard JavaScript Functions
-function formatDate(isoString) {
-    if (!isoString) return 'Nunca';
-    const date = new Date(isoString);
-    return date.toLocaleString('es-ES');
+function formatDate(dateStr) {
+    if (!dateStr) return 'N/A';
+    return new Date(dateStr).toLocaleString();
+}
+
+function getDiscoveryStatus(device) {
+    const status = device.discoveryStatus;
+    if (!status || !status.isCompleted) {
+        return '<span class="discovery-badge discovery-pending">🔍 Pendiente</span>';
+    }
+    
+    const paramCount = status.parameterCount || 0;
+    const lastDiscovery = status.lastDiscovery;
+    const isManual = status.isManual;
+    
+    if (paramCount < 50) {
+        return '<span class="discovery-badge discovery-incomplete">⚠️ Incompleto</span>';
+    }
+    
+    let statusText = `✅ Completo (${paramCount} params)`;
+    if (isManual) {
+        statusText += ' - Manual';
+    } else if (lastDiscovery) {
+        const daysSince = Math.floor((Date.now() - new Date(lastDiscovery).getTime()) / (1000 * 60 * 60 * 24));
+        statusText += ` - ${daysSince}d ago`;
+    }
+    
+    return `<span class="discovery-badge discovery-complete" title="Último discovery: ${formatDate(lastDiscovery)}">${statusText}</span>`;
+}
+
+function getDiscoveryButton(device) {
+    const status = device.discoveryStatus;
+    const isDiscovered = status && status.isCompleted && (status.parameterCount || 0) >= 50;
+    
+    if (isDiscovered && status.isManual) {
+        // Already manually discovered - show re-discovery button
+        return `<button class="btn btn-warning" onclick="runDiscovery('${device.serialNumber}')" title="Re-ejecutar discovery manual">
+                    🔄 Re-Discovery
+                </button>`;
+    } else if (isDiscovered) {
+        // Auto-discovered - show manual discovery button  
+        return `<button class="btn btn-success" onclick="runDiscovery('${device.serialNumber}')" title="Ejecutar discovery manual">
+                    🔍 Discovery Manual
+                </button>`;
+    } else {
+        // Not discovered or incomplete
+        return `<button class="btn btn-success" onclick="runDiscovery('${device.serialNumber}')" title="Ejecutar discovery">
+                    🔍 Discovery
+                </button>`;
+    }
 }
 
 function getDeviceStatus(lastInform) {
@@ -56,7 +102,7 @@ async function loadDevices() {
                             <th>Clase de Producto</th>
                             <th>Estado</th>
                             <th>Último Inform</th>
-                            <th>Acciones</th>
+                            <th>Acciones & Discovery</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -85,9 +131,8 @@ async function loadDevices() {
                                             <button class="btn btn-secondary" onclick="viewParams('${device.serialNumber}')" title="Ver parámetros">
                                                 📋 Params
                                             </button>
-                                            <button class="btn btn-success" onclick="runDiscovery('${device.serialNumber}')" title="Ejecutar discovery">
-                                                🔍 Discovery
-                                            </button>
+                                            ${getDiscoveryButton(device)}
+                                            <div class="discovery-status">${getDiscoveryStatus(device)}</div>
                                             <button class="btn btn-warning" onclick="connectionRequest('${device.serialNumber}')" title="Solicitar conexión">
                                                 🔗 Connect
                                             </button>
