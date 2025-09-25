@@ -24,9 +24,13 @@ router.get('/wifi/:serial', requireAuth, (req: Request, res: Response) => {
   res.send(createWiFiConfigPage(serial));
 });
 
-// Default redirect to dashboard
+// Default redirect - check authentication first
 router.get('/', (req: Request, res: Response) => {
-  res.redirect('/cms/dashboard');
+  if (req.session.cms?.isAuthenticated) {
+    res.redirect('/cms/dashboard');
+  } else {
+    res.redirect('/cms/login');
+  }
 });
 
 export default router;

@@ -165,11 +165,9 @@ tr069Management/
 ├── data/
 │   └── devices.json             # Complete device database
 ├── docs/
-│   ├── PROGRESS.md              # Development progress
-│   ├── Summary.md               # Project summary
-│   └── CMS_REORGANIZATION.md    # ✨ NEW: Modular architecture details
+│   ├── PROGRESS.md              # Detailed development progress
+│   └── Summary.md               # Comprehensive project summary (consolidated)
 ├── .env                         # Environment configuration
-├── CMS_FEATURES.md              # Detailed CMS documentation
 └── server.log                   # Runtime logs (when running in background)
 ```
 
@@ -226,4 +224,4 @@ tr069Management/
 
 ---
 
-*For detailed documentation, see `docs/PROJECT_SUMMARY.md`*
+*For detailed technical information, see `docs/Summary.md` and `docs/PROGRESS.md`*
