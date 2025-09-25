@@ -1150,5 +1150,6 @@ app.post('/connection-request', async (req: Request, res: Response) => {
 });
 
 const port = process.env.PORT ? Number(process.env.PORT) : 7547;
+const host = process.env.HOST || '0.0.0.0'; // Listen on all interfaces
 loadDevices();
-app.listen(port, () => console.log(`TR-069 server listening on port ${port}`));
+app.listen(port, host, () => console.log(`TR-069 server listening on ${host}:${port}`));
