@@ -3,6 +3,10 @@ import path from 'path';
 
 const DATA_DIR = path.resolve(__dirname, '..', 'data');
 const DEVICES_FILE = path.join(DATA_DIR, 'devices.json');
+const LOCK_FILE = path.join(DATA_DIR, 'devices.lock');
+
+// Simple file locking mechanism for multi-process safety
+let lockPromise: Promise<void> | null = null;
 
 export type Device = {
   serialNumber: string;
@@ -27,6 +31,53 @@ function ensureDataDir() {
   if (!fs.existsSync(DEVICES_FILE)) fs.writeFileSync(DEVICES_FILE, JSON.stringify({}), 'utf8');
 }
 
+// Acquire file lock for safe concurrent access
+async function acquireLock(): Promise<() => void> {
+  const maxWait = 5000; // 5 seconds max wait
+  const startTime = Date.now();
+  
+  while (Date.now() - startTime < maxWait) {
+    try {
+      // Try to create lock file exclusively
+      const fd = fs.openSync(LOCK_FILE, 'wx');
+      fs.writeSync(fd, process.pid.toString());
+      fs.closeSync(fd);
+      
+      // Return unlock function
+      return () => {
+        try {
+          fs.unlinkSync(LOCK_FILE);
+        } catch (e) {
+          // Lock file already removed
+        }
+      };
+    } catch (e) {
+      // Lock exists, wait a bit
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+  }
+  
+  throw new Error('Could not acquire file lock within timeout');
+}
+
+// Thread-safe operation wrapper
+async function withLock<T>(operation: () => T): Promise<T> {
+  // Serialize lock operations
+  if (lockPromise) {
+    await lockPromise;
+  }
+  
+  const unlock = await acquireLock();
+  try {
+    const result = operation();
+    lockPromise = Promise.resolve();
+    return result;
+  } finally {
+    unlock();
+    lockPromise = null;
+  }
+}
+
 export function loadDevices(): Record<string, Device> {
   ensureDataDir();
   try {
@@ -47,6 +98,25 @@ export function upsertDevice(device: Device) {
   const devices = loadDevices();
   devices[device.serialNumber] = { ...(devices[device.serialNumber] || {}), ...device };
   saveDevices(devices);
+}
+
+// Thread-safe versions for multi-worker usage
+export async function upsertDeviceSafe(device: Device): Promise<void> {
+  return withLock(() => {
+    const devices = loadDevices();
+    devices[device.serialNumber] = { ...(devices[device.serialNumber] || {}), ...device };
+    saveDevices(devices);
+  });
+}
+
+export async function setDeviceParamsSafe(serial: string, params: Record<string, any>): Promise<void> {
+  return withLock(() => {
+    const devices = loadDevices();
+    if (devices[serial]) {
+      devices[serial].params = { ...devices[serial].params, ...params };
+      saveDevices(devices);
+    }
+  });
 }
 
 export function getDevice(serial: string): Device | undefined {

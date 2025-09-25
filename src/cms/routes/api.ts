@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../../auth/session';
+import { getActiveSessions, getSessionStats, getSession } from './sessions';
 
 const router = Router();
 
@@ -113,5 +114,10 @@ router.post('/device/:serial/action', requireAuth, async (req: Request, res: Res
     res.status(500).json({ error: 'Failed to execute device action' });
   }
 });
+
+// Session management endpoints
+router.get('/sessions', requireAuth, getActiveSessions);
+router.get('/sessions/stats', requireAuth, getSessionStats);
+router.get('/sessions/:serial', requireAuth, getSession);
 
 export default router;

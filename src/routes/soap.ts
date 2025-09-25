@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { upsertDevice, listDeviceParams, getDevice, setDeviceParams, isDeviceDiscovered } from '../store';
+import { upsertDevice, listDeviceParams, getDevice, setDeviceParams, isDeviceDiscovered, upsertDeviceSafe, setDeviceParamsSafe } from '../store';
 import { parseSoap, buildInformResponse, buildMethodRequest } from '../soap';
 import { debug } from '../auth';
+import { sessionManager } from '../session-manager';
 
 export const handleSoapRequest = async (req: Request, res: Response) => {
   const rawBody = req.body;
@@ -76,8 +77,15 @@ export const handleSoapRequest = async (req: Request, res: Response) => {
     if (serialNumber) {
       const serial = String(serialNumber);
       const existing = getDevice(serial);
-      debug(`🔗 Device ${serial} connected (Inform received)`);
-      upsertDevice({ serialNumber: serial, params: paramsMap, lastInform: new Date().toISOString() });
+      debug(`🔗 Device ${serial} connected (Inform received) [Worker ${process.pid}]`);
+      
+      // Create or update session
+      const manufacturer = deviceId?.Manufacturer || deviceId?.manufacturer || 'Unknown';
+      const sessionDeviceId = `${manufacturer}-${serial}`;
+      sessionManager.createOrUpdateSession(serial, sessionDeviceId, 'active');
+      
+      // Use thread-safe upsert for multi-worker safety
+      await upsertDeviceSafe({ serialNumber: serial, params: paramsMap, lastInform: new Date().toISOString() });
 
       // Check if we should do a full parameter discovery
       // Auto-discover only if:
@@ -102,14 +110,24 @@ export const handleSoapRequest = async (req: Request, res: Response) => {
 
       // Check if we should do discovery - either pending request OR auto-discovery for new/incomplete devices
       const pendingDiscovery = (global as any).pendingDiscovery || {};
-      if (pendingDiscovery[serial] || shouldDoFullDiscovery) {
+      const isCurrentlyDiscovering = sessionManager.isDiscovering(serial);
+      
+      if ((pendingDiscovery[serial] || shouldDoFullDiscovery) && !isCurrentlyDiscovering) {
         const discoveryReason = isManualDiscovery ? 'manual request' :
                               isNewDevice ? 'new device' :
                               !isAlreadyDiscovered ? 'incomplete discovery' :
                               'pending discovery';
-        debug(`✨ Starting full parameter discovery for device ${serial} during Inform session (reason: ${discoveryReason})`);
+        debug(`✨ Starting full parameter discovery for device ${serial} during Inform session (reason: ${discoveryReason}) [Worker ${process.pid}]`);
 
-        // Initialize discovery queue for this session
+        // Initialize session discovery state
+        sessionManager.setDiscoveryState(serial, {
+          pathQueue: [''], // Start with root
+          currentBatch: 0,
+          totalBatches: 1,
+          parametersFound: 0
+        });
+
+        // Initialize discovery queue for this session (backward compatibility)
         if (!(global as any).discoveryQueue) (global as any).discoveryQueue = {};
         (global as any).discoveryQueue[serial] = {
           paths: [''], // Start with root

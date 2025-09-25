@@ -5,7 +5,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "start:cluster": "bun src/cluster-main.ts",
     "dev": "bun --watch src/index.ts",
+    "dev:cluster": "bun --watch src/cluster-main.ts",
     "test": "node --test"
   },
   "dependencies": {
