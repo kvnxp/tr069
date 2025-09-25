@@ -1,0 +1,23 @@
+# Dependency directories
+node_modules/
+
+# Environment variables (contains sensitive data)
+.env
+
+# Device data (may contain sensitive device information)
+data/devices-original.json
+
+# Logs
+*.log
+server.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+data
